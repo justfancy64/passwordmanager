@@ -1,22 +1,19 @@
 import os
 import filecmp
+import bcrypt
 
 
 def main():
+    while True:
 
-    account_check()
-    userid = userid_check()
-    menu(userid)
-    #os.system("steghide embed -ef /root/workspace/github.com/justfancy64/password_manager/test.txt -cf /root/workspace/github.com/justfancy64/password_manager/vault.jpg -sf /root/workspace/github.com/justfancy64/password_manager/vault.jpg -f -p 123")
-    #add_password_to_vault()
-    #clear_vault()\z
-
+        account_check()
+        userid = userid_check()
+        menu(userid)
 
 
 
 def add_password_to_vault(usrid, path):
         new_data = str(input("enter data for encryption:"))
-        #image_path = input("enter existing vault path")
         os.system(f"steghide extract -sf {path} -xf /password_manager/data.txt -f -p {usrid} -q")
         data = open(r"/root/workspace/github.com/justfancy64/password_manager/data.txt", "a")
         data.write(f"\n{new_data}")
@@ -36,12 +33,14 @@ def signup():
     os.system("echo creating new user")
     master_username = input("enter your username: ")
     master_password = input("enter your password: ")
-    f = open("password_manager/temp.txt", "w")
-    f.write(f"{master_username}_{master_password}")
+    userid = str(f"{master_username}_{master_password}")
+    encrypted_id = password_encyption(userid)
+    print(encrypted_id)
+    f = open("password_manager/bin/log.bin", "ab")
+    f.write(encrypted_id)
     f.close()
-    os.system("steghide embed -ef /root/workspace/github.com/justfancy64/password_manager/temp.txt -cf /root/workspace/github.com/justfancy64/password_manager/template.jpg -sf /root/workspace/github.com/justfancy64/password_manager/usrid.jpg -f -p 123 -q")
     print("please log in using your username and password")
-    os.system("rm /root/workspace/github.com/justfancy64/password_manager/temp.txt")
+    account_check()
 
 def account_check():
     print("welcome to pogger ogger password manager")
@@ -60,19 +59,14 @@ def userid_check():
     
     username = input("enter your username:")
     password = input("enter your password:")
-    newid = open("/root/workspace/github.com/justfancy64/password_manager/tempnew.txt", "w")
-    newid.write(f"{username}_{password}")
-    newid.close()
-    os.system("steghide extract -sf /root/workspace/github.com/justfancy64/password_manager/usrid.jpg -xf /root/workspace/github.com/justfancy64/password_manager/temp.txt -p 123 -f -q")
-    
-    if filecmp.cmp("/root/workspace/github.com/justfancy64/password_manager/temp.txt", "/root/workspace/github.com/justfancy64/password_manager/tempnew.txt"):
-        os.system("rm /root/workspace/github.com/justfancy64/password_manager/temp.txt")
-        os.system("rm /root/workspace/github.com/justfancy64/password_manager/tempnew.txt")
-        return str(f"{username}_{password}")
-    
-    else: 
-        print("wrong credentials")
+    usrid = str(f"{username}_{password}")
+    if password_check(usrid):
+        menu(usrid)
+    else:
+        print("WRONG CREDENTIALS")
+        print("TRY AGAIN")
         userid_check()
+
 
 def select_template():
     path = input("provide the path of the image u want to use as template")             
@@ -96,14 +90,14 @@ def menu(usrid):
         case "new":
             create_vault(usrid)
         case "logout":
-            account_check()
+            pass
         case _:
             print("invalid input ")
             menu()
 
 
 def image_menu(usrid, image_path):
-    print("use 'view', 'add', 'clear' or 'change template'")
+    print("use 'view', 'add', 'clear'")
     command = input()
     match command:
         case "view":
@@ -149,6 +143,30 @@ def delete_vault():
     print("Are u sure ?\ntype 'yes' is so.")
     os.system("rm /root/workspace/github.com/justfancy64/password_manager/vault.jpg")
     print("vault and its data has been deleted")
+
+
+
+def password_encyption(usrid):
+    byte_object = usrid.encode("utf-8")
+    hashed = bcrypt.hashpw(byte_object, bcrypt.gensalt(14))
+    print(hashed)
+    return hashed
+
+def password_check(usrid):
+    byte_object = usrid.encode("utf-8")
+    f = open("password_manager/bin/log.bin", "r")
+    id_vault = f.read()
+    lst = id_vault.split("$2b$14$")
+    for line in lst:
+        print(line)
+        line2 = "$2b$14$" + line
+        print(line2)
+        bin = line2.encode("utf-8")
+   
+        if bcrypt.checkpw(byte_object, hashed_password=bin):
+            return True
+        else:
+            return False
 
 
 if __name__ == "__main__":
